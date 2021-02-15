@@ -35,6 +35,17 @@ describe('slots', () => {
       expect(wrapper.find('.namedNested').exists()).toBe(true)
     })
 
+    it('should return the correct number of vnodes in the slots', () => {
+      const wrapper = mount(ComponentWithSlots, {
+        slots: {
+          default: '<div /><div />'
+        }
+      })
+
+      // @ts-expect-error
+      expect(wrapper.vm.$slots.default()).toHaveLength(2)
+    })
+
     it('supports providing a render function to slot', () => {
       const wrapper = mount(ComponentWithSlots, {
         slots: {
