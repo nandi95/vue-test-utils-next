@@ -1,8 +1,6 @@
-# Introduction
+# Getting Started
 
 Welcome to Vue Test Utils, the official testing utility library for Vue.js!
-
-<!-- content to be removed when we merge VTU repos -->
 
 This is the documentation for Vue Test Utils v2, which targets Vue 3.
 
@@ -40,7 +38,7 @@ test('displays message', () => {
 
 ## What Next?
 
-To see Vue Test Utils in action, [take the Crash Course](./a-crash-course/), where we build a simple Todo app using a test-first approach.
+To see Vue Test Utils in action, [take the Crash Course](../guide/essentials/a-crash-course.md), where we build a simple Todo app using a test-first approach.
 
 Docs are split into two main sections:
 

@@ -1,14 +1,14 @@
+const package = require('../../package.json')
 /** @typedef {import('vitepress').UserConfig} UserConfig */
 
 /** @type {UserConfig} */
 const config = {
-  // base: '/v2/',
-  title: 'Vue Test Utils for Vue 3',
-  description: 'The documentation for the official Vue Test Utils',
+  title: `Vue Test Utils for Vue 3 (${package.version})`,
+  description: 'The documentation for the official Vue Test Utils for Vue 3',
   locales: {
     '/': {
       lang: 'en-US',
-      title: 'Vue Test Utils (2.0.0-beta.14)'
+      title: `Vue Test Utils for Vue 3 (${package.version})`
     }
   },
   head: [['link', { rel: 'icon', href: `/logo.png` }]],
@@ -18,8 +18,15 @@ const config = {
     docsDir: 'docs',
     docsBranch: 'master',
     editLinks: true,
+    algolia: {
+      apiKey: 'ee1b8516c9e5a5be9b6c25684eafc42f',
+      indexName: 'vue_test_utils',
+      searchParameters: {
+        facetFilters: ['tags:next']
+      }
+    },
     nav: [
-      { text: 'Guide', link: '/introduction/' },
+      { text: 'Guide', link: '/guide/' },
       { text: 'API Reference', link: '/api/' },
       { text: 'Migrating from Vue 2', link: '/migration/' },
       {
@@ -29,10 +36,6 @@ const config = {
     ],
     sidebar: [
       {
-        text: 'Introduction',
-        link: '/introduction/'
-      },
-      {
         text: 'Installation',
         link: '/installation/'
       },
@@ -40,6 +43,7 @@ const config = {
         text: 'Essentials',
         collapsable: false,
         children: [
+          { text: 'Getting Started', link: '/guide/' },
           { text: 'A Crash Course', link: '/guide/essentials/a-crash-course' },
           {
             text: 'Conditional Rendering',

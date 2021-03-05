@@ -33,23 +33,23 @@ export const attachEmitListener = () => {
   setDevtoolsHook(createDevTools(events))
 }
 
+// devtools hook only catches Vue component custom events
 function createDevTools(events: Events): any {
   return {
     emit(eventType, ...payload) {
       if (eventType !== DevtoolsHooks.COMPONENT_EMIT) return
 
       const [rootVM, componentVM, event, eventArgs] = payload
-      recordEvent(events, componentVM, event, eventArgs)
+      recordEvent(componentVM, event, eventArgs)
     }
   } as Partial<typeof devtools>
 }
 
-function recordEvent(
-  events: Events,
+export const recordEvent = (
   vm: ComponentInternalInstance,
   event: string,
-  args: Events[number]
-): void {
+  args: unknown[]
+): void => {
   // Functional component wrapper creates a parent component
   let wrapperVm = vm
   while (typeof wrapperVm?.type === 'function') wrapperVm = wrapperVm.parent!
@@ -64,4 +64,16 @@ function recordEvent(
 
   // Record the event message sent by the emit
   events[cid][event].push(args)
+
+  if (event.startsWith('update:')) {
+    if (args.length !== 1) {
+      throw new Error(
+        'Two-way bound properties have to emit a single value. ' +
+          args.length +
+          ' values given.'
+      )
+    }
+
+    vm.props[event.slice('update:'.length)] = args[0]
+  }
 }

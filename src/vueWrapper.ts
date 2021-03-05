@@ -1,5 +1,7 @@
 import { ComponentPublicInstance, nextTick, App } from 'vue'
 import { ShapeFlags } from '@vue/shared'
+// @ts-ignore todo - No DefinitelyTyped package exists for this
+import eventTypes from 'dom-event-types'
 
 import { config } from './config'
 import { DOMWrapper } from './domWrapper'
@@ -9,12 +11,15 @@ import {
   VueElement
 } from './types'
 import { createWrapperError } from './errorWrapper'
-import { TriggerOptions } from './createDomEvent'
 import { find, matches } from './utils/find'
-import { mergeDeep, textContent } from './utils'
-import { emitted } from './emit'
+import { mergeDeep } from './utils'
+import { emitted, recordEvent } from './emit'
+import BaseWrapper from './baseWrapper'
+import WrapperLike from './interfaces/wrapperLike'
 
-export class VueWrapper<T extends ComponentPublicInstance> {
+export class VueWrapper<T extends ComponentPublicInstance>
+  extends BaseWrapper<T['$el']>
+  implements WrapperLike {
   private componentVM: T
   private rootVM: ComponentPublicInstance | null
   private __app: App | null
@@ -25,11 +30,15 @@ export class VueWrapper<T extends ComponentPublicInstance> {
     vm: ComponentPublicInstance,
     setProps?: (props: Record<string, any>) => void
   ) {
+    super(vm?.$el)
     this.__app = app
     // root is null on functional components
     this.rootVM = vm?.$root
     this.componentVM = vm as T
     this.__setProps = setProps
+
+    this.attachNativeEventListener()
+
     config.plugins.VueWrapper.extend(this)
   }
 
@@ -40,6 +49,18 @@ export class VueWrapper<T extends ComponentPublicInstance> {
 
   private get parentElement(): VueElement {
     return this.vm.$el.parentElement
+  }
+
+  private attachNativeEventListener(): void {
+    const vm = this.vm
+    if (!vm) return
+
+    const element = this.element
+    for (let eventName of Object.keys(eventTypes)) {
+      element.addEventListener(eventName, (...args) => {
+        recordEvent(vm.$, eventName, args)
+      })
+    }
   }
 
   get element(): Element {
@@ -58,28 +79,8 @@ export class VueWrapper<T extends ComponentPublicInstance> {
     return selector ? props[selector] : props
   }
 
-  classes(): string[]
-  classes(className: string): boolean
-  classes(className?: string): string[] | boolean {
-    return className
-      ? new DOMWrapper(this.element).classes(className)
-      : new DOMWrapper(this.element).classes()
-  }
-
-  attributes(): { [key: string]: string }
-  attributes(key: string): string
-  attributes(key?: string): { [key: string]: string } | string {
-    return key
-      ? new DOMWrapper(this.element).attributes(key)
-      : new DOMWrapper(this.element).attributes()
-  }
-
-  exists() {
-    return true
-  }
-
   emitted<T = unknown>(): Record<string, T[]>
-  emitted<T = unknown>(eventName?: string): undefined | T[]
+  emitted<T = unknown>(eventName: string): undefined | T[]
   emitted<T = unknown>(
     eventName?: string
   ): undefined | T[] | Record<string, T[]> {
@@ -93,10 +94,6 @@ export class VueWrapper<T extends ComponentPublicInstance> {
     }
 
     return this.element.outerHTML
-  }
-
-  text() {
-    return textContent(this.element)
   }
 
   find<K extends keyof HTMLElementTagNameMap>(
@@ -229,11 +226,6 @@ export class VueWrapper<T extends ComponentPublicInstance> {
     return this.vm.$nextTick()
   }
 
-  trigger(eventString: string, options?: TriggerOptions) {
-    const rootElementWrapper = new DOMWrapper(this.element)
-    return rootElementWrapper.trigger(eventString, options)
-  }
-
   unmount() {
     // preventing dispose of child component
     if (!this.__app) {
@@ -242,7 +234,7 @@ export class VueWrapper<T extends ComponentPublicInstance> {
       )
     }
 
-    this.__app.unmount(this.parentElement)
+    this.__app.unmount()
   }
 }
 

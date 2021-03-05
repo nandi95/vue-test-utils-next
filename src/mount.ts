@@ -337,11 +337,12 @@ export function mount(
     return vm.$nextTick()
   }
 
-  // add tracking for emitted events
-  attachEmitListener()
-
   // create the app
   const app = createApp(Parent)
+
+  // add tracking for emitted events
+  // this must be done after `createApp`: https://github.com/vuejs/vue-test-utils-next/issues/436
+  attachEmitListener()
 
   // global mocks mixin
   if (global?.mocks) {
@@ -405,10 +406,13 @@ export function mount(
   // stubs
   // even if we are using `mount`, we will still
   // stub out Transition and Transition Group by default.
-  stubComponents(global.stubs, options?.shallow)
+  stubComponents(
+    global.stubs,
+    global.renderStubDefaultSlot ? false : options?.shallow
+  )
 
   // users expect stubs to work with globally registered
-  // compnents, too, such as <router-link> and <router-view>
+  // components, too, such as <router-link> and <router-view>
   // so we register those globally.
   // https://github.com/vuejs/vue-test-utils-next/issues/249
   if (global?.stubs) {
@@ -438,8 +442,11 @@ export function mount(
   // if not, use the return value from app.mount.
   const appRef = vm.$refs[MOUNT_COMPONENT_REF] as ComponentPublicInstance
   const $vm = Reflect.ownKeys(appRef).length ? appRef : vm
+  // we add `hasOwnProperty` so jest can spy on the proxied vm without throwing
+  $vm.hasOwnProperty = (property) => {
+    return Reflect.has($vm, property)
+  }
   console.warn = warnSave
-
   return createWrapper(app, $vm, setProps)
 }
 
